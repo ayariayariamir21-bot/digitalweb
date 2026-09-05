@@ -462,6 +462,25 @@ h1 em, h2 em { font-family: var(--serif); font-weight: 500; letter-spacing: -.07
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
 }
 
+/* Amir Digital home additions */
+.services-strip { background: #f0efe9; }
+.service-grid { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); }
+.service-grid > div { position: relative; min-height: 230px; padding: 22px 24px 25px; border-right: 1px solid var(--ink); }
+.service-grid > div:first-child { border-left: 1px solid var(--ink); }
+.service-grid > div:nth-child(2) { background: #e4f0ed; }
+.service-grid > div:nth-child(3) { background: #f8e5d7; }
+.service-grid span { display: block; margin-bottom: 48px; color: var(--muted); font: 10px var(--mono); }
+.service-grid svg { position: absolute; top: 21px; right: 22px; color: var(--orange); }
+.service-grid h3 { margin: 0 0 9px; font-size: 22px; letter-spacing: -.045em; }
+.service-grid p { max-width: 250px; margin: 0; color: var(--ink-soft); font-size: 13px; line-height: 1.55; }
+.hero-section, .featured-section, .services-strip, .category-section, .notes-section { position: relative; }
+@media (max-width: 600px) {
+  .service-grid { grid-template-columns: 1fr; }
+  .service-grid > div { min-height: 190px; border-right: 0; border-bottom: 1px solid var(--ink); }
+  .service-grid > div:last-child { border-bottom: 0; }
+  .service-grid span { margin-bottom: 38px; }
+}
+
 /* Note article */
 .note-page { padding: 35px 0 112px; background: var(--white); }
 .note-article-header { max-width: 760px; margin: 48px auto 65px; text-align: center; }
