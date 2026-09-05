@@ -1,0 +1,1 @@
+ALTER TABLE `orders` ADD CONSTRAINT `orders_access_token_unique` UNIQUE(`accessToken`);

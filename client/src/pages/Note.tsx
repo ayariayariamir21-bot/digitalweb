@@ -1,0 +1,12 @@
+import { ArrowLeft, ArrowUpRight } from "lucide-react";
+import { Link, useRoute } from "wouter";
+import { posts } from "@/lib/products";
+
+export default function Note() {
+  const [, params] = useRoute("/notes/:slug");
+  const post = posts.find((item) => item.slug === params?.slug);
+  if (!post) return <div className="empty-state"><p>That note could not be found.</p><Link href="/#notes" className="button button-dark">Back to notes</Link></div>;
+  return <article className="note-page"><div className="container"><Link href="/#notes" className="back-link"><ArrowLeft size={15} /> All notes</Link><header className="note-article-header"><div className="product-meta"><span className="pill">{post.category}</span><span>{post.date} · {post.readTime}</span></div><h1>{post.title}</h1><p>{post.excerpt}</p></header><div className="article-rule" /><div className="article-layout"><div className="article-body"><p>There is a particular kind of satisfaction in a small thing that works exactly as promised. It does not ask for a new system, a new identity, or a free afternoon. It simply makes the next step easier to see.</p><h2>Start with the useful edge</h2><p>When I am working on a new product, I try to find the smallest useful edge: the one moment where a little more clarity would change what someone does next. That moment is usually more specific than the first brief suggests.</p><p>It might be a better question at the start of a project. A calmer place to review the week. A page that explains what a product is for without making the reader work for it.</p><blockquote>“The job is not to add more surface area. It is to make the right surface easier to reach.”</blockquote><h2>Leave a little room</h2><p>Good digital products do not need to fill every available space. The right pause gives an idea somewhere to land. It leaves people with enough attention to do the work, not just admire the tool.</p><p>That is the standard I am keeping here: make it clear, make it kind, and make it useful on an ordinary day.</p><Link href="/products" className="text-link">Explore the product shelf <ArrowUpRight size={15} /></Link></div><aside className="article-aside"><div className="aside-card"><span>FIELD NOTE</span><strong>Keep the<br /><em>useful edge.</em></strong><small>Amir Digital / 2026</small></div><Link href="/contact" className="aside-contact">Have a thought? <ArrowUpRight size={14} /></Link></aside></div></div></article>;
+}
+
+

@@ -1,0 +1,55 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1788529672243,
+      "tag": "0000_cheerful_eternals",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1788529980167,
+      "tag": "0001_equal_clint_barton",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1788604008721,
+      "tag": "0002_good_major_mapleleaf",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1788604942246,
+      "tag": "0003_woozy_silver_sable",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1788607080000,
+      "tag": "0004_secure_downloads",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1788609869200,
+      "tag": "0005_lucky_firebird",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1788625869574,
+      "tag": "0006_order-access-token-unique",
+      "breakpoints": true
+    }
+  ]
+}
