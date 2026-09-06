@@ -8,6 +8,18 @@ import App from "./App";
 import { startLogin } from "./const";
 import "./index.css";
 
+function loadAnalytics() {
+  const endpoint = import.meta.env.VITE_ANALYTICS_ENDPOINT;
+  const websiteId = import.meta.env.VITE_ANALYTICS_WEBSITE_ID;
+  if (!endpoint || !websiteId || typeof document === "undefined") return;
+
+  const script = document.createElement("script");
+  script.defer = true;
+  script.src = `${endpoint.replace(/\/$/, "")}/umami`;
+  script.dataset.websiteId = websiteId;
+  document.head.appendChild(script);
+}
+
 const queryClient = new QueryClient();
 
 const redirectToLoginIfUnauthorized = (error: unknown) => {
@@ -79,3 +91,5 @@ createRoot(document.getElementById("root")!).render(
     </QueryClientProvider>
   </trpc.Provider>
 );
+
+loadAnalytics();

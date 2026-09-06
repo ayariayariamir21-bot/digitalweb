@@ -1,6 +1,7 @@
 import Stripe from "stripe";
 import { ENV, requireEnv } from "./_core/env";
 import { attachPaymentReference, getOrderForPayment, markOrderPaid } from "./db";
+import { assertProviderImplemented, getConfiguredPaymentProvider } from "./paymentProviders";
 
 function getStripe() {
   return new Stripe(requireEnv("STRIPE_SECRET_KEY", ENV.stripeSecretKey));
@@ -15,6 +16,9 @@ function amountInCents(value: string) {
 }
 
 export async function createStripeCheckoutSession(orderId: number, accessToken?: string) {
+  const provider = getConfiguredPaymentProvider(ENV.paymentProvider);
+  assertProviderImplemented(provider);
+
   const orderData = await getOrderForPayment(orderId, accessToken);
   if (!orderData) throw new Error("Order not found");
   if (orderData.order.paymentStatus !== "pending" || orderData.order.status !== "pending") {
