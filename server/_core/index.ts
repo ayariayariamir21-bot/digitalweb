@@ -11,6 +11,12 @@ import { serveStatic, setupVite } from "./vite";
 import { handleStripeWebhook } from "../payments";
 import { downloadAsset } from "../downloads";
 import { rateLimit } from "./rateLimit";
+import { COOKIE_NAME } from "@shared/const";
+import { ENV, requireEnv } from "./env";
+import { getSessionCookieOptions } from "./cookies";
+import { sdk } from "./sdk";
+import { upsertUser } from "../db";
+import { timingSafeEqual } from "node:crypto";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -97,6 +103,48 @@ async function startServer() {
   // above intentionally keeps its raw body and is unaffected.
   app.use(express.json({ limit: "1mb" }));
   app.use(express.urlencoded({ limit: "1mb", extended: true }));
+  app.post("/api/dev/admin-login", async (req, res) => {
+    if (ENV.isProduction) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+
+    const configuredKey = ENV.devAdminKey;
+    const submittedKey = typeof req.body?.key === "string" ? req.body.key : "";
+    if (!configuredKey || !submittedKey) {
+      res.status(401).json({ error: "Invalid development credentials" });
+      return;
+    }
+
+    const expected = Buffer.from(configuredKey, "utf8");
+    const received = Buffer.from(submittedKey, "utf8");
+    if (expected.length !== received.length || !timingSafeEqual(expected, received)) {
+      res.status(401).json({ error: "Invalid development credentials" });
+      return;
+    }
+
+    try {
+      const openId = "local-dev-admin";
+      await upsertUser({
+        openId,
+        name: "Local Development Admin",
+        email: "local-admin@example.test",
+        loginMethod: "local-development",
+        role: "admin",
+        lastSignedIn: new Date(),
+      });
+      const sessionToken = await sdk.signSession({
+        openId,
+        appId: "local-development",
+        name: "Local Development Admin",
+      }, { expiresInMs: 8 * 60 * 60 * 1000 });
+      res.cookie(COOKIE_NAME, sessionToken, { ...getSessionCookieOptions(req), maxAge: 8 * 60 * 60 * 1000 });
+      res.json({ success: true });
+    } catch (error) {
+      console.error("[DevAuth] Login failed:", error instanceof Error ? error.message : error);
+      res.status(500).json({ error: "Development login unavailable" });
+    }
+  });
   registerStorageProxy(app);
   registerOAuthRoutes(app);
   // tRPC API

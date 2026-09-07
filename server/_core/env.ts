@@ -7,6 +7,7 @@ export const ENV = {
   isProduction: process.env.NODE_ENV === "production",
   appUrl: process.env.APP_URL ?? "http://localhost:3000",
   paymentProvider: process.env.PAYMENT_PROVIDER ?? "stripe",
+  devAdminKey: process.env.DEV_ADMIN_KEY ?? "",
   stripeSecretKey: process.env.STRIPE_SECRET_KEY ?? "",
   stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET ?? "",
   privateStorageRoot: process.env.PRIVATE_STORAGE_ROOT ?? "",
