@@ -138,7 +138,12 @@ async function startServer() {
         appId: "local-development",
         name: "Local Development Admin",
       }, { expiresInMs: 8 * 60 * 60 * 1000 });
-      res.cookie(COOKIE_NAME, sessionToken, { ...getSessionCookieOptions(req), maxAge: 8 * 60 * 60 * 1000 });
+      res.cookie(COOKIE_NAME, sessionToken, {
+        ...getSessionCookieOptions(req),
+        sameSite: "lax",
+        secure: false,
+        maxAge: 8 * 60 * 60 * 1000,
+      });
       res.json({ success: true });
     } catch (error) {
       console.error("[DevAuth] Login failed:", error instanceof Error ? error.message : error);
