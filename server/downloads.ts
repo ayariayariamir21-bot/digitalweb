@@ -37,11 +37,23 @@ export async function listDownloadAccess(sessionId: string) {
     .innerJoin(digitalAssets, eq(digitalAssets.productId, orderItems.productId))
     .where(eq(orderItems.orderId, orderId));
 
+  console.info("[Downloads] Preparing access", {
+    orderId,
+    assetCount: assets.length,
+  });
+
   const now = new Date();
   const expiresAt = new Date(now.getTime() + ACCESS_TTL_MS);
   const access = [];
   for (const row of assets) {
-    if (!(await storage.exists(row.asset.storageKey))) {
+    const filePresent = await storage.exists(row.asset.storageKey);
+    console.info("[Downloads] Asset lookup", {
+      productId: row.item.productId,
+      assetId: row.asset.id,
+      storageKey: row.asset.storageKey,
+      filePresent,
+    });
+    if (!filePresent) {
       throw new Error("Digital asset is unavailable");
     }
     // One active grant per (order, asset): revoke previous tokens first so
@@ -68,6 +80,10 @@ export async function listDownloadAccess(sessionId: string) {
       url: `/api/download/${rawToken}`,
     });
   }
+  console.info("[Downloads] Access grants generated", {
+    orderId,
+    grantCount: access.length,
+  });
   return { orderId, access };
 }
 

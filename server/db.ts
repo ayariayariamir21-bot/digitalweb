@@ -211,7 +211,16 @@ export function isOrderTokenValid(storedToken: string | null, providedToken?: st
   return timingSafeEqual(Buffer.from(providedToken), Buffer.from(storedToken));
 }
 
-export async function getOrderForPayment(orderId: number, accessToken?: string) {
+/**
+ * Internal server-side order lookup (webhook only).
+ *
+ * Unlike `getOrderForPayment`, this does NOT require the guest capability
+ * token: the caller is the verified Stripe webhook (signature checked in
+ * `handleStripeWebhook`), not the unauthenticated browser. Amount, currency
+ * and existence are then re-checked against the retrieved order before any
+ * state change.
+ */
+export async function getOrderForWebhook(orderId: number) {
   const db = await getRequiredDb();
   const orderRows = await db
     .select({ order: orders, customer: customers })
@@ -221,10 +230,16 @@ export async function getOrderForPayment(orderId: number, accessToken?: string) 
     .limit(1);
   const orderRow = orderRows[0];
   if (!orderRow) return undefined;
-  // Same error as "not found": never reveal whether an order id exists.
-  if (!isOrderTokenValid(orderRow.order.accessToken, accessToken)) return undefined;
   const items = await db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
   return { ...orderRow, items };
+}
+
+export async function getOrderForPayment(orderId: number, accessToken?: string) {
+  const orderRow = await getOrderForWebhook(orderId);
+  if (!orderRow) return undefined;
+  // Same error as "not found": never reveal whether an order id exists.
+  if (!isOrderTokenValid(orderRow.order.accessToken, accessToken)) return undefined;
+  return orderRow;
 }
 
 export async function attachPaymentReference(orderId: number, paymentReference: string) {

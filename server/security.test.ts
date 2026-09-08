@@ -128,6 +128,12 @@ describe("private storage traversal", () => {
     expect(await storage.exists("guides/real.pdf")).toBe(true);
   });
 
+  it("returns a controlled error when the asset is missing", async () => {
+    await expect(
+      storage.download("guides/missing.pdf", { fileName: "missing.pdf", mimeType: "application/pdf", fileSize: null }),
+    ).rejects.toThrow("Digital asset is unavailable");
+  });
+
   it("blocks ../ traversal", async () => {
     expect(await storage.exists("../outside.pdf")).toBe(false);
     expect(await storage.exists("guides/../../outside.pdf")).toBe(false);

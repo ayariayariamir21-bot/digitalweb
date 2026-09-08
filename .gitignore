@@ -120,3 +120,8 @@ temp/
 
 # Manus version file (auto-generated, not part of source)
 .project-config.json
+
+# Local secrets and private digital files
+.envnprivate-storage/
+dist/
+

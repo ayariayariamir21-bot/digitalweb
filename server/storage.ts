@@ -46,7 +46,8 @@ export class DevelopmentFileStorage implements StorageService {
 
   async exists(storageKey: string) {
     try {
-      await access(await this.resolveReal(storageKey));
+      const filePath = await this.resolveReal(storageKey);
+      await access(filePath);
       return true;
     } catch {
       return false;
@@ -54,8 +55,11 @@ export class DevelopmentFileStorage implements StorageService {
   }
 
   async download(storageKey: string, metadata: Omit<PrivateFile, "stream">) {
+    if (!(await this.exists(storageKey))) {
+      this.resolve(storageKey);
+      throw new Error("Digital asset is unavailable");
+    }
     const filePath = await this.resolveReal(storageKey);
-    if (!(await this.exists(storageKey))) throw new Error("Digital asset is unavailable");
     return { ...metadata, stream: createReadStream(filePath) };
   }
 }

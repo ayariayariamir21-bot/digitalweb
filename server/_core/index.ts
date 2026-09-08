@@ -40,6 +40,9 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 async function startServer() {
   const app = express();
   const server = createServer(app);
+  console.info("[Storage] Private storage configured", {
+    configured: Boolean(ENV.privateStorageRoot.trim()),
+  });
   // Health check (no DB/Stripe dependency, safe for load balancers).
   // Liveness only: readiness with real dependencies is documented in
   // docs/production-readiness.md.
@@ -173,6 +176,29 @@ async function startServer() {
   if (port !== preferredPort) {
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   }
+
+  // Startup diagnostics — boolean flags only, never the secret values.
+  // `stripe listen --forward-to` MUST target this exact URL/port, otherwise
+  // webhooks silently never reach this server and success pages hang on
+  // "Payment is still being confirmed".
+  const stripeSecretConfigured = Boolean(ENV.stripeSecretKey.trim());
+  const webhookSecretConfigured = Boolean(ENV.stripeWebhookSecret.trim());
+  const webhookPath = "/api/stripe/webhook";
+  const webhookUrl = `http://localhost:${port}${webhookPath}`;
+  console.info("[Stripe] Startup diagnostics (no secret values shown)");
+  console.info(`  HTTP port used ................. : ${port}`);
+  console.info(`  STRIPE_SECRET_KEY configured ... : ${stripeSecretConfigured}`);
+  console.info(`  STRIPE_WEBHOOK_SECRET set ...... : ${webhookSecretConfigured}`);
+  console.info(`  Stripe webhook URL ............. : ${webhookUrl}`);
+  console.info(`  Webhook route mounted before JSON middleware : true (raw body)`);
+  console.info(`  NODE_ENV ....................... : ${process.env.NODE_ENV ?? "unset"}`);
+  if (!stripeSecretConfigured) {
+    console.error("[Stripe] ERROR: STRIPE_SECRET_KEY is not configured. Creating checkout sessions and verifying webhooks will fail until it is added to .env (then restart the server).");
+  }
+  if (!webhookSecretConfigured) {
+    console.error(`[Stripe] ERROR: STRIPE_WEBHOOK_SECRET is not configured. Webhook requests will be rejected with HTTP 400. Run \`stripe listen --forward-to ${webhookUrl}\` and copy the whsec_ value into .env (then restart the server).`);
+  }
+  console.info(`[Stripe] Keep Stripe CLI forwarding to: ${webhookUrl}`);
 
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);

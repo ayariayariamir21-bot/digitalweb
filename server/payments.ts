@@ -1,6 +1,6 @@
 import Stripe from "stripe";
 import { ENV, requireEnv } from "./_core/env";
-import { attachPaymentReference, getOrderForPayment, markOrderPaid } from "./db";
+import { attachPaymentReference, getOrderForPayment, getOrderForWebhook, markOrderPaid } from "./db";
 import { assertProviderImplemented, getConfiguredPaymentProvider } from "./paymentProviders";
 
 function getStripe() {
@@ -62,6 +62,9 @@ export async function handleStripeWebhook(rawBody: Buffer, signature: string | u
   const secret = requireEnv("STRIPE_WEBHOOK_SECRET", ENV.stripeWebhookSecret);
   if (!signature) throw new Error("Missing Stripe signature");
   const stripe = getStripe();
+  // constructEvent verifies the HMAC signature with STRIPE_WEBHOOK_SECRET.
+  // The raw body that Stripe sent is required: a JSON-parsed object (or any
+  // reformatted body) would fail signature verification.
   const event = stripe.webhooks.constructEvent(rawBody, signature, secret);
 
   if (
@@ -79,6 +82,41 @@ export async function handleStripeWebhook(rawBody: Buffer, signature: string | u
   }
   const orderId = Number(session.metadata?.orderId);
   if (!Number.isInteger(orderId) || orderId < 1) throw new Error("Stripe event has invalid order metadata");
+
+  const orderData = await getOrderForWebhook(orderId);
+  if (!orderData) throw new Error("Order not found for webhook event");
+  if (!orderData.items.length) throw new Error("Order has no items");
+
+  // Server-side amount + currency verification: a stored/whole-amount
+  // mismatch (currency, tampered totals) rejects the event before any state
+  // change, instead of silently trusting the Stripe session payload.
+  if ((session.currency ?? "").toLowerCase() !== orderData.order.currency.toLowerCase()) {
+    throw new Error("Stripe event currency does not match the order");
+  }
+  const expectedTotal = orderData.items.reduce(
+    (sum, item) => sum + amountInCents(item.total),
+    0
+  );
+  if (session.amount_total !== expectedTotal) {
+    throw new Error("Stripe event amount does not match the order");
+  }
+
+  // Idempotent: a redelivered or late event after the order is already paid
+  // changes nothing, and an already-paid order owned by another session is
+  // never flipped (protects against conflicting refs / late events).
+  if (orderData.order.status === "paid" && orderData.order.paymentStatus === "paid") {
+    if (orderData.order.paymentReference === session.id) {
+      return { handled: true, eventId: event.id, alreadyPaid: true };
+    }
+    throw new Error("Order is already paid by another payment");
+  }
+
   await markOrderPaid(orderId, session.id);
+  console.info("[Stripe] Payment confirmed", {
+    eventId: event.id,
+    eventType: event.type,
+    orderId,
+    newStatus: "paid",
+  });
   return { handled: true, eventId: event.id };
 }

@@ -23,6 +23,8 @@ function eventPayload(overrides: Record<string, unknown> = {}): string {
         id: "cs_test_123",
         object: "checkout.session",
         payment_status: "paid",
+        currency: "usd",
+        amount_total: 99900,
         metadata: { orderId: "999" },
       },
     },
